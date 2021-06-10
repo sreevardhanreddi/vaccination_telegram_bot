@@ -22,7 +22,7 @@ logging.basicConfig(
 today = datetime.now()
 
 
-next_few_days = [(today + timedelta(days=i)).strftime("%d-%m-%Y") for i in range(4)]
+next_few_days = [(today + timedelta(days=i)).strftime("%d-%m-%Y") for i in range(3)]
 
 PINCODES = [p.strip() for p in os.getenv("PINCODES").split(";")]
 UA = UserAgent()
