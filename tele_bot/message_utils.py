@@ -53,16 +53,16 @@ def _format_message(message={}):
     return """ 
     <b>Center : {center_name}</b>
     \n<b>Vaccine : {vaccine}</b>
-    \n<b>Address</b> : {address}
-    \n<b>Pincode : {pincode}</b>
-    \n<b>Timings : {from_to}</b>
     \n<b>Fee : {fee_type}</b>
     \n<b>Date : {date}</b>
+    \n<b>Pincode : {pincode}</b>
+    \n<b>Timings : {from_to}</b>
     \n<b>Available Capacity : {available_capacity}</b>
     \n<b>Available Capacity Dose 1: {available_capacity_dose1}</b>
     \n<b>Available Capacity Dose 2: {available_capacity_dose2}</b>
     \n<b>Min Age Limit: {min_age_limit}</b>
     \n<b>Slots: \n{slots}</b>
+    \n<b>Address</b> : {address}
     """.format(
         center_name=center_name,
         vaccine=vaccine,

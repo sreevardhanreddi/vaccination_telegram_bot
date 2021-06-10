@@ -38,6 +38,7 @@ def get_sessions(pincode, date):
                 pincode, date
             ),
             headers={"User-Agent": str(UA.random)},
+            timeout=5,
         )
 
         if res.status_code == 403:
