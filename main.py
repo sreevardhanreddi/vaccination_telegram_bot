@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 import time
 from datetime import datetime, timedelta
 from pprint import pprint
@@ -25,9 +26,10 @@ SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", "3"))
 MIN_AGE = 18
 
 
-def get_sessions(pincode, date):
+def get_sessions(pincode, date, sessions=[]):
     try:
         # request cowin portal API for available sessions
+        logging.info("fetching data for date: {}, PINCODE: {}".format(date, pincode))
         res = requests.get(
             "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode={}&date={}".format(
                 pincode, date
@@ -38,7 +40,20 @@ def get_sessions(pincode, date):
 
         if res.status_code == 403:
             logging.error("403 Cowin portal is blocking your IP address")
-        return json.loads(res.text).get("sessions") if res.ok else []
+        response_sessions = res.json()["sessions"] if res.ok else []
+
+        # condition to check
+        for s in response_sessions:
+            if MIN_AGE >= s.get("min_age_limit") and (
+                s.get("available_capacity_dose1") > 0
+                and s.get("available_capacity") > 0
+            ):
+                logging.info("-" * 50)
+                logging.info(s)
+                logging.info("-" * 50)
+                sessions.append(s)
+
+        return res
     except Exception as e:
         logging.error("{}".format(e), exc_info=True)
         return []
@@ -47,29 +62,32 @@ def get_sessions(pincode, date):
 def check_slots():
     today = datetime.now()
     next_few_days = [(today + timedelta(days=i)).strftime("%d-%m-%Y") for i in range(3)]
+    request_threads = []
+    sessions = []  # store the return value of the response
     for pincode in PINCODES:
         for date in next_few_days:
-            logging.info(
-                "fetching data for date: {}, PINCODE: {}".format(date, pincode)
+            request_thread = threading.Thread(
+                target=get_sessions,
+                args=(
+                    pincode,
+                    date,
+                ),
+                kwargs={
+                    "sessions": sessions,
+                },
             )
-            # fetch data from cowin portal
-            sessions = get_sessions(pincode, date)
+            request_thread.start()
+            request_threads.append(request_thread)
 
-            # parse session details
-            for s in sessions:
-                try:
-                    if MIN_AGE >= s.get("min_age_limit") and (
-                        s.get("available_capacity_dose1") > 0
-                        and s.get("available_capacity") > 0
-                    ):
-                        logging.info("-" * 50)
-                        logging.info(
-                            "data for date: {}, PINCODE: {}".format(date, pincode)
-                        )
-                        send_message(s)
-                        logging.info(s)
-                except Exception as e:
-                    logging.error("{}".format(e), exc_info=True)
+    [request_thread.join() for request_thread in request_threads]
+
+    bot_threads = []
+    for s in sessions:
+        bot_thread = threading.Thread(target=send_message, args=(s,))
+        bot_thread.start()
+        bot_threads.append(bot_thread)
+
+    [bot_thread.join() for bot_thread in bot_threads]
 
 
 def main():
