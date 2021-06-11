@@ -19,11 +19,6 @@ logging.basicConfig(
 )
 
 
-today = datetime.now()
-
-
-next_few_days = [(today + timedelta(days=i)).strftime("%d-%m-%Y") for i in range(3)]
-
 PINCODES = [p.strip() for p in os.getenv("PINCODES").split(";")]
 UA = UserAgent()
 SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", "3"))
@@ -50,6 +45,8 @@ def get_sessions(pincode, date):
 
 
 def check_slots():
+    today = datetime.now()
+    next_few_days = [(today + timedelta(days=i)).strftime("%d-%m-%Y") for i in range(3)]
     for pincode in PINCODES:
         for date in next_few_days:
             logging.info(
@@ -63,7 +60,7 @@ def check_slots():
                 try:
                     if MIN_AGE >= s.get("min_age_limit") and (
                         s.get("available_capacity_dose1") > 0
-                        or s.get("available_capacity") > 0
+                        and s.get("available_capacity") > 0
                     ):
                         logging.info("-" * 50)
                         logging.info(
